@@ -60,7 +60,7 @@ namespace SloCovidServer
                     document.Info.License = new NSwag.OpenApiLicense
                     {
                         Name = "Use under MIT",
-                        Url = "https://raw.githubusercontent.com/slo-covid-19/data-api/master/LICENSE"
+                        Url = "https://raw.githubusercontent.com/treker-mk/data-api/master/LICENSE"
                     };
                 };
             });
