@@ -21,7 +21,7 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
 
       - name: Build docker image
-        run: docker build -t image .
+        run: docker build -t image sources/SloCovidServer/.
 
       - name: Push image
         run: |
