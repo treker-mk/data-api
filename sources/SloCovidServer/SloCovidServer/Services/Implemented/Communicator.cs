@@ -64,6 +64,7 @@ namespace SloCovidServer.Services.Implemented
         readonly ArrayEndpointCache<RetirementHomesDay> retirementHomesCache;
         readonly ArrayEndpointCache<DeceasedPerRegionsDay> deceasedPerRegionsDayCache;
         readonly ArrayEndpointCache<MunicipalityDay> municipalityDayCache;
+        readonly ArrayEndpointCache<MunicipalityDay> skopjeMunicipalityDayCache;
         readonly ArrayEndpointCache<HealthCentersDay> healthCentersDayCache;
         /// <summary>
         /// Holds error flags against endpoints
@@ -85,6 +86,7 @@ namespace SloCovidServer.Services.Implemented
             retirementHomesCache = new ArrayEndpointCache<RetirementHomesDay>();
             deceasedPerRegionsDayCache = new ArrayEndpointCache<DeceasedPerRegionsDay>();
             municipalityDayCache = new ArrayEndpointCache<MunicipalityDay>();
+            skopjeMunicipalityDayCache = new ArrayEndpointCache<MunicipalityDay>();
             healthCentersDayCache = new ArrayEndpointCache<HealthCentersDay>();
             errors = new ConcurrentDictionary<string, object>();
         }
@@ -149,6 +151,13 @@ namespace SloCovidServer.Services.Implemented
         public async Task<(ImmutableArray<MunicipalityDay>? Data, string ETag, long? Timestamp)> GetMunicipalitiesAsync(string callerEtag, CancellationToken ct)
         {
             var result = await GetAsync(callerEtag, $"{root}/municipality.csv", municipalityDayCache,
+                mapFromString: new MunicipalitiesMapper().GetMunicipalityDayFromRaw, ct);
+            return result;
+        }
+
+        public async Task<(ImmutableArray<MunicipalityDay>? Data, string ETag, long? Timestamp)> GetSkopjeMunicipalitiesAsync(string callerEtag, CancellationToken ct)
+        {
+            var result = await GetAsync(callerEtag, $"{root}/skopje-municipalities.csv", skopjeMunicipalityDayCache,
                 mapFromString: new MunicipalitiesMapper().GetMunicipalityDayFromRaw, ct);
             return result;
         }
