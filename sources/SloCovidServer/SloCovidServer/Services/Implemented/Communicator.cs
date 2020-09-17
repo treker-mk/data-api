@@ -157,7 +157,7 @@ namespace SloCovidServer.Services.Implemented
 
         public async Task<(ImmutableArray<MunicipalityDay>? Data, string ETag, long? Timestamp)> GetSkopjeMunicipalitiesAsync(string callerEtag, CancellationToken ct)
         {
-            var result = await GetAsync(callerEtag, $"{root}/skopje-municipalities.csv", skopjeMunicipalityDayCache,
+            var result = await GetAsync(callerEtag, $"{root}/skopje.csv", skopjeMunicipalityDayCache,
                 mapFromString: new MunicipalitiesMapper().GetMunicipalityDayFromRaw, ct);
             return result;
         }
