@@ -9,7 +9,7 @@ namespace SloCovidServer.Controllers
 {
     [ApiController]
     [Route("api/skopje-municipalities")]
-    public class SkopjeMunicipalitiesController : MetricsController<MunicipalitiesController>
+    public class SkopjeMunicipalitiesController : MetricsController<SkopjeMunicipalitiesController>
     {
         public SkopjeMunicipalitiesController(ILogger<SkopjeMunicipalitiesController> logger, ICommunicator communicator) : base(logger, communicator)
         {
