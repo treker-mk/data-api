@@ -22,8 +22,8 @@ namespace SloCovidServer.Services.Implemented
 {
     public class Communicator : ICommunicator
     {
-        // const string root = "https://raw.githubusercontent.com/sledilnik/data/master/csv";
-        readonly string root = String.IsNullOrEmpty(Environment.GetEnvironmentVariable("API_DATA_SOURCE_ROOT")) ? "https://raw.githubusercontent.com/sledilnik/data/master/csv" : Environment.GetEnvironmentVariable("API_DATA_SOURCE_ROOT");
+        // const string root = "https://raw.githubusercontent.com/treker-mk/data/master/csv";
+        readonly string root = String.IsNullOrEmpty(Environment.GetEnvironmentVariable("API_DATA_SOURCE_ROOT")) ? "https://raw.githubusercontent.com/treker-mk/data/master/csv" : Environment.GetEnvironmentVariable("API_DATA_SOURCE_ROOT");
         readonly HttpClient client;
         readonly ILogger<Communicator> logger;
         readonly Mapper mapper;
