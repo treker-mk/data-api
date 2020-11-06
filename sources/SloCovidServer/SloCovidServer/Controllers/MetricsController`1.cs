@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Prometheus;
+using SloCovidServer.Models;
 using SloCovidServer.Services.Abstract;
 using System;
 using System.Collections.Immutable;
@@ -47,17 +48,31 @@ namespace SloCovidServer.Controllers
             this.communicator = communicator;
             endpointName = GetType().Name.Replace("Controller", "").ToLower();
         }
+        protected string RequestETag
+        {
+            get
+            {
+                if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etagValues))
+                {
+                    string etag = etagValues.SingleOrDefault() ?? "";
+                    // cloudflare only supports weak etags in non-enterprise account, strip prefix so we can work as usual
+                    if (etag.StartsWith("W/"))
+                    {
+                        etag = etag.Substring(2);
+                    }
+                    return etag;
+                }
+                return null;
+            }
+        }
         protected async Task<ActionResult<T?>> ProcessRequestAsync<T>(
-            Func<string, CancellationToken, Task<(T? Data, string ETag, long? Timestamp)>> retrieval, string endpointName = null)
+            Func<string, DataFilter, CancellationToken, Task<(T? Data, string Raw, string ETag, long? Timestamp)>> retrieval,
+            DataFilter filter,
+            string endpointName = null)
             where T : struct
         {
             var stopwatch = Stopwatch.StartNew();
-            string etag = null;
-
-            if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etagValues))
-            {
-                etag = etagValues.SingleOrDefault() ?? "";
-            }
+            string etag = RequestETag;
             bool hasETag = !string.IsNullOrEmpty(etag);
             bool exceptionOccured = false;
             try
@@ -67,7 +82,7 @@ namespace SloCovidServer.Controllers
                     endpointName = this.endpointName;
                 }
                 RequestCount.WithLabels(endpointName, hasETag.ToString()).Inc();
-                var result = await retrieval(etag, CancellationToken.None);
+                var result = await retrieval(etag, filter, CancellationToken.None);
                 Response.Headers[HeaderNames.ETag] = result.ETag;
                 if (result.Timestamp.HasValue)
                 {
@@ -79,7 +94,12 @@ namespace SloCovidServer.Controllers
                     {
                         RequestMissedCache.WithLabels(endpointName).Inc();
                     }
-                    return Ok(result.Data);
+                    if (Request.Headers[HeaderNames.Accept].Contains("text/csv") || Request.Query["format"].Contains("csv")) {
+                        return Ok(result.Raw);
+                    } else {
+                        return Ok(result.Data);
+                    }
+                    
                 }
                 else
                 {
@@ -97,5 +117,6 @@ namespace SloCovidServer.Controllers
                 RequestDuration.WithLabels(endpointName, hasETag.ToString(), exceptionOccured.ToString()).Observe(stopwatch.Elapsed.Milliseconds);
             }
         }
+
     }
 }

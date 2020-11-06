@@ -14,7 +14,7 @@ namespace SloCovidServer.Services.Implemented
         static readonly int[] ageBucketRangesNew = new[] { 4, 14, 24, 34, 44, 54, 64, 74, 84 };
         static readonly string[] facilities = { "iksk", "mksk", "kozle", "gob8sep" , "bitola" , "stip" , "infdrugi", "privatni", "tbc" }; // SLO SPEC
         static readonly string[] hospitals = { "bse", "bto", "sbbr", "sbce", "sbiz", "sbje", "sbms", "sbng",
-            "sbnm", "sbpt", "sbsg", "sbtr", "ukclj", "ukcmb", "ukg" };
+            "sbnm", "sbpt", "sbsg", "sbtr", "ukclj", "ukcmb", "ukg", "upklj", "pbbe", "pbvo", "pbor", "pbid" };
 
         static Mapper()
         {
@@ -257,7 +257,8 @@ namespace SloCovidServer.Services.Implemented
             return new HospitalDay(
                 GetHospitalBeds(hospital, header, fields),
                 GetHospitalICUs(hospital, header, fields),
-                GetHospitalVents(hospital, header, fields)
+                GetHospitalVents(hospital, header, fields),
+                GetHospitalCare(hospital, header, fields)
             );
         }
 
@@ -265,11 +266,11 @@ namespace SloCovidServer.Services.Implemented
         {
             string location = !string.IsNullOrEmpty(hospital) ? $".{hospital}" : "";
             return new HospitalBedDay(
-                GetInt($"hospital{location}.bed.total", header, fields),
-                GetInt($"hospital{location}.bed.total.max", header, fields),
-                GetInt($"hospital{location}.bed.occupied", header, fields),
-                GetInt($"hospital{location}.bed.free", header, fields),
-                GetInt($"hospital{location}.bed.free.max", header, fields)
+                GetInt($"hospital{location}.bed.total", header, fields, isMandatory: false),
+                GetInt($"hospital{location}.bed.total.max", header, fields, isMandatory: false),
+                GetInt($"hospital{location}.bed.occupied", header, fields, isMandatory: false),
+                GetInt($"hospital{location}.bed.free", header, fields, isMandatory: false),
+                GetInt($"hospital{location}.bed.free.max", header, fields, isMandatory: false)
             );
         }
         HospitalICUDay GetHospitalICUs(string hospital, ImmutableDictionary<string, int> header, IImmutableList<string> fields)
@@ -290,6 +291,16 @@ namespace SloCovidServer.Services.Implemented
                 GetInt($"hospital{location}.vent.total.max", header, fields, isMandatory: false),
                 GetInt($"hospital{location}.vent.occupied", header, fields, isMandatory: false),
                 GetInt($"hospital{location}.vent.free", header, fields, isMandatory: false)
+            );
+        }
+        HospitalCareDay GetHospitalCare(string hospital, ImmutableDictionary<string, int> header, IImmutableList<string> fields)
+        {
+            string location = !string.IsNullOrEmpty(hospital) ? $".{hospital}" : "";
+            return new HospitalCareDay(
+                GetInt($"hospital{location}.care.total", header, fields, isMandatory: false),
+                GetInt($"hospital{location}.care.total.max", header, fields, isMandatory: false),
+                GetInt($"hospital{location}.care.occupied", header, fields, isMandatory: false),
+                GetInt($"hospital{location}.care.free", header, fields, isMandatory: false)
             );
         }
 
@@ -464,6 +475,8 @@ namespace SloCovidServer.Services.Implemented
                 GetHospitalMovement(facility: null, "icu", header, fields),
                 GetHospitalMovement(facility: null, "critical", header, fields),
                 GetStateDeceased(header, fields),
+                GetHospitalMovement(facility: null, "care", header, fields),
+                GetDeceasedCare(facility: null, header, fields),
                 new OutOfHospital(GetInt(fields[header["state.out_of_hospital.todate"]]))
                 );
             ImmutableDictionary<string, Unit> f = ImmutableDictionary<string, Unit>.Empty;
@@ -473,7 +486,9 @@ namespace SloCovidServer.Services.Implemented
                     inHospital: GetHospitalMovement(facility, "in_hospital", header, fields),
                     GetHospitalMovement(facility, "icu", header, fields),
                     GetHospitalMovement(facility, "critical", header, fields),
-                    GetDeceased(facility, header, fields)
+                    GetDeceased(facility, header, fields),
+                    GetHospitalMovement(facility, "care", header, fields),
+                    GetDeceasedCare(facility, header, fields)
                 );
                 f = f.Add(facility, unit);
             }
@@ -483,11 +498,15 @@ namespace SloCovidServer.Services.Implemented
         HospitalMovement GetHospitalMovement(string facility, string type, ImmutableDictionary<string, int> header, IImmutableList<string> fields)
         {
             string location = !string.IsNullOrEmpty(facility) ? $".{facility}" : "";
+            string inKey = $"state{location}.{type}.in";
+            string outKey = $"state{location}.{type}.out";
+            string currentKey = $"state{location}.{type}";
+            string toDateKey = $"state{location}.{type}.todate";
             return new HospitalMovement(
-                GetInt(fields[header[$"state{location}.{type}.in"]]),
-                GetInt(fields[header[$"state{location}.{type}.out"]]),
-                GetInt(fields[header[$"state{location}.{type}"]]),
-                GetInt(fields[header[$"state{location}.{type}.todate"]])
+                header.ContainsKey(inKey) ? GetInt(fields[header[inKey]]) : null,
+                header.ContainsKey(outKey) ? GetInt(fields[header[outKey]]): null,
+                header.ContainsKey(currentKey) ? GetInt(fields[header[currentKey]]): null,
+                header.ContainsKey(toDateKey) ? GetInt(fields[header[toDateKey]]): null
             );
         }
 
@@ -505,14 +524,24 @@ namespace SloCovidServer.Services.Implemented
         {
             string location = $".{facility}";
             return new HospitalDeceased(
-                GetInt(fields[header[$"state{location}.deceased"]]),
-                GetInt(fields[header[$"state{location}.deceased.todate"]]),
+                GetInt($"state{location}.deceased", header, fields, isMandatory: false),
+                GetInt($"state{location}.deceased.todate", header, fields, isMandatory: false),
                 new ToDateToday(
-                    GetInt(fields[header[$"state{location}.deceased.icu"]]),
-                    GetInt(fields[header[$"state{location}.deceased.icu.todate"]])
+                    GetInt($"state{location}.deceased.icu", header, fields, isMandatory: false),
+                    GetInt($"state{location}.deceased.icu.todate", header, fields, isMandatory: false)
                 )
             );
         }
+
+        ToDateToday GetDeceasedCare(string facility, ImmutableDictionary<string, int> header, IImmutableList<string> fields)
+        {
+            string location = !string.IsNullOrEmpty(facility) ? $".{facility}": "";
+            return new ToDateToday(
+                    GetInt($"state{location}.deceased.care", header, fields, isMandatory: false),
+                    GetInt($"state{location}.deceased.care.todate", header, fields, isMandatory: false)
+                );
+        }
+
 
         StateDeceased GetStateDeceased(ImmutableDictionary<string, int> header, IImmutableList<string> fields)
         {
@@ -527,6 +556,10 @@ namespace SloCovidServer.Services.Implemented
                         GetInt(fields[header[$"state.deceased.hospital.icu.todate"]])
                         )
                     ),
+                care: new ToDateToday(
+                        GetInt(fields[header[$"state.deceased.care"]]),
+                        GetInt(fields[header[$"state.deceased.care.todate"]])
+                ),
                 home: new ToDateToday(
                         GetInt(fields[header[$"state.deceased.home"]]),
                         GetInt(fields[header[$"state.deceased.home.todate"]])

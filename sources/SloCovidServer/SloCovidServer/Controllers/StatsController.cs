@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using SloCovidServer.Models;
 using SloCovidServer.Services.Abstract;
+using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
@@ -16,9 +17,10 @@ namespace SloCovidServer.Controllers
         {} 
 
         [HttpGet]
-        public async Task<ActionResult<ImmutableArray<StatsDaily>?>> Get()
+        [ResponseCache(VaryByQueryKeys = new[] {"*"}, VaryByHeader = "Accept", Duration = 60)]
+        public Task<ActionResult<ImmutableArray<StatsDaily>?>> Get(DateTime? from, DateTime? to)
         {
-            return await ProcessRequestAsync(communicator.GetStatsAsync);
+            return ProcessRequestAsync(communicator.GetStatsAsync, new DataFilter(from, to));
         }
     }
 }

@@ -9,17 +9,18 @@ using System.Threading.Tasks;
 namespace SloCovidServer.Controllers
 {
     [ApiController]
-    [Route("api/retirement-homes-list")]
-    public class RetirementHomesListController : MetricsController<RetirementHomesListController>
+    [Route("api/stats-weekly")]
+    public class StatsWeeklyController : MetricsController<StatsWeeklyController>
     {
-        public RetirementHomesListController(ILogger<RetirementHomesListController> logger, ICommunicator communicator) : base(logger, communicator)
+        public StatsWeeklyController(ILogger<StatsWeeklyController> logger, ICommunicator communicator) : base(logger, communicator)
         {
+
         }
         [HttpGet]
         [ResponseCache(VaryByQueryKeys = new[] {"*"}, VaryByHeader = "Accept", Duration = 60)]
-        public Task<ActionResult<ImmutableArray<RetirementHome>?>> Get()
+        public Task<ActionResult<ImmutableArray<StatsWeeklyDay>?>> Get(DateTime? from, DateTime? to)
         {
-            return ProcessRequestAsync(communicator.GetRetirementHomesListAsync, DataFilter.Empty);
+            return ProcessRequestAsync(communicator.GetStatsWeeklyAsync, new DataFilter(from, to));
         }
     }
 }

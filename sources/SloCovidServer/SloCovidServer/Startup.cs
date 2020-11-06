@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Prometheus;
+using SloCovidServer.Formatters;
 using SloCovidServer.Services.Abstract;
 using SloCovidServer.Services.Implemented;
 using System.Net.Http;
@@ -39,7 +41,7 @@ namespace SloCovidServer
                         .AllowAnyOrigin()
                         .AllowAnyMethod()
                         .AllowAnyHeader()
-                        .WithExposedHeaders("Timestamp");
+                        .WithExposedHeaders("Timestamp", "Etag");
                 });
             });
             services.AddResponseCompression();
@@ -64,24 +66,41 @@ namespace SloCovidServer
                     };
                 };
             });
+            // don't include null value properties in JSON content to limit content payload
+            services.AddMvc()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.IgnoreNullValues = true;
+                })
+                // adds support for text/csv output, won't work for nested structures
+                .AddCsvSerializerFormatters();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ISlackService slackService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ISlackService slackService, ICommunicator communicator)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-
+           
             app.UseRouting();
             app.UseCors(CorsPolicy);
             app.UseResponseCompression();
+            app.UseResponseCaching();
 
             app.UseAuthorization();
             app.Use(async (context, next) =>
             {
                 context.Response.Headers.Add("SchemaVersion", SchemaVersion);
+                context.Response.GetTypedHeaders().CacheControl =
+                    new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
+                    {
+                        Public = true,
+                        MaxAge = System.TimeSpan.FromSeconds(10)
+                    };
+                context.Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.Vary] =
+                    new string[] { "Accept-Encoding" };
                 await next.Invoke();
             });
             // Register the Swagger generator and the Swagger UI middleware
@@ -100,7 +119,7 @@ namespace SloCovidServer
                         await slackService.SendNotificationAsync($"DATA API REST service failed on {context.Request?.Path}", CancellationToken.None);
                     }
                     catch
-                    {}
+                    { }
                 });
             });
 
