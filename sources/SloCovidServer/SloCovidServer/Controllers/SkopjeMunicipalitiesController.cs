@@ -15,9 +15,10 @@ namespace SloCovidServer.Controllers
         {
         }
         [HttpGet]
-        public async Task<ActionResult<ImmutableArray<MunicipalityDay>?>> Get()
+        [ResponseCache(VaryByQueryKeys = new[] {"*"}, VaryByHeader = "Accept", Duration = 60)]
+        public Task<ActionResult<ImmutableArray<MunicipalityDay>?>> Get(DateTime? from, DateTime? to)
         {
-            return await ProcessRequestAsync(communicator.GetSkopjeMunicipalitiesAsync);
+            return ProcessRequestAsync(communicator.GetSkopjeMunicipalitiesAsync, new DataFilter(from, to));
         }
     }
 }
