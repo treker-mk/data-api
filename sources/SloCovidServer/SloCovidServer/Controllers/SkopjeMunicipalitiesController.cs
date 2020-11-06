@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using SloCovidServer.Models;
 using SloCovidServer.Services.Abstract;
+using System;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
