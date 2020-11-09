@@ -12,7 +12,7 @@ namespace SloCovidServer.Services.Implemented
     {
         static readonly ImmutableArray<AgeBucketMeta> ageBuckets;
         static readonly int[] ageBucketRangesNew = new[] { 4, 14, 24, 34, 44, 54, 64, 74, 84 };
-        static readonly string[] facilities = { "iksk", "mksk", "kozle", "gob8sep" , "bitola" , "stip" , "infdrugi", "privatni", "tbc" }; // SLO SPEC
+        static readonly string[] facilities = { "iksk", "mksk", "kozle", "gob8sep" , "bitola" , "stip" , "infdrugi", "privatni", "tbc", "neuro" }; // SLO SPEC
         static readonly string[] hospitals = { "bse", "bto", "sbbr", "sbce", "sbiz", "sbje", "sbms", "sbng",
             "sbnm", "sbpt", "sbsg", "sbtr", "ukclj", "ukcmb", "ukg", "upklj", "pbbe", "pbvo", "pbor", "pbid" };
 
