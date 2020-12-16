@@ -349,6 +349,7 @@ namespace SloCovidServer.Services.Implemented
                 GetInt("cases.recovered.todate", header, fields),
                 GetInt("cases.closed.todate", header, fields),
                 GetInt("cases.active", header, fields),
+                GetInt("cases.last14days", header, fields),
                 new HealthSystemSCases(GetInt("cases.hs.employee.confirmed.todate", header, fields)),
                 new RetirementHomeCases(
                     GetInt("cases.rh.employee.confirmed.todate", header, fields),
