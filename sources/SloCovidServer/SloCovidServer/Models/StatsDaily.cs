@@ -153,10 +153,10 @@ namespace SloCovidServer.Models
         }
     }
 
-    public record Vaccination
+    public class Vaccination
     {                
-        public ToDateToday Administered { get; init; }
-        public ToDateToday Administered2nd { get; init; }
+        public ToDateToday Administered { get; }
+        public ToDateToday Administered2nd { get; }
         public Vaccination(ToDateToday administered, ToDateToday administered2nd)
         {
             Administered = administered;
