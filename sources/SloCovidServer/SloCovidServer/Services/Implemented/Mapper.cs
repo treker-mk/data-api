@@ -448,7 +448,17 @@ namespace SloCovidServer.Services.Implemented
                 perTreatment,
                 perRegion,
                 perAgeSum,
-                deceasedPerAge
+                deceasedPerAge,
+                new Vaccination(
+                    administered: new ToDateToday(
+                        GetInt("vaccination.administered", header, fields),
+                        GetInt("vaccination.administered.todate", header, fields)
+                    ),
+                    administered2nd: new ToDateToday(
+                        GetInt("vaccination.administered2nd", header, fields),
+                        GetInt("vaccination.administered2nd.todate", header, fields)
+                    )
+                )
             );
             return result;
         }
