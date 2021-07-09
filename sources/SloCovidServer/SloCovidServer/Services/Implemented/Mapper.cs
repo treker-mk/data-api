@@ -1,4 +1,5 @@
-﻿using SloCovidServer.Models;
+﻿using Microsoft.Extensions.Logging;
+using SloCovidServer.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -16,6 +17,8 @@ namespace SloCovidServer.Services.Implemented
         static readonly string[] hospitals = { "bse", "bto", "sbbr", "sbce", "sbiz", "sbje", "sbms", "sbng",
             "sbnm", "sbpt", "sbsg", "sbtr", "ukclj", "ukcmb", "ukg", "upklj", "pbbe", "pbvo", "pbor", "pbid" };
 
+        readonly ILogger<Mapper> logger;
+
         static Mapper()
         {
             ageBuckets = ImmutableArray<AgeBucketMeta>.Empty;
@@ -27,6 +30,12 @@ namespace SloCovidServer.Services.Implemented
             }
             ageBuckets = ageBuckets.Add(new AgeBucketMeta(start, null));
         }
+
+        public Mapper(ILogger<Mapper> logger)
+        {
+            this.logger = logger;
+        }
+
         public ImmutableArray<StatsDaily> GetStatsFromRaw(string raw)
         {
             ImmutableArray<StatsDaily> result = ImmutableArray<StatsDaily>.Empty;
@@ -35,9 +44,11 @@ namespace SloCovidServer.Services.Implemented
             StatsDaily previous = null;
             foreach (string line in lines.Skip(1))
             {
+                logger.LogWarning("WILL try parsing line {line}", line);
                 if (!string.IsNullOrWhiteSpace(line))
                 {
                     var dailyData = GetDailyStatsFromRaw(header, line, previous?.StatePerTreatment.DeceasedToDate, previous?.StatePerTreatment.OutOfHospitalToDate);
+                    logger.LogWarning("FINISHED parsing line {line}", dailyData);
                     result = result.Add(dailyData);
                     previous = dailyData;
                 }
